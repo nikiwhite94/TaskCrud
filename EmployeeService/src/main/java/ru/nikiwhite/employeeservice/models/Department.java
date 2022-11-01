@@ -31,6 +31,6 @@ public class Department {
     private long headId;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "department", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "department")
     private List<Employee> employees;
 }
