@@ -23,7 +23,7 @@ public class JWTUtil {
                 .withClaim("email", email)
                 .withIssuedAt(new Date())
                 .withIssuer("Employee Service")
-                .withExpiresAt(ZonedDateTime.now().plusMinutes(60).toInstant())
+                .withExpiresAt(ZonedDateTime.now().plusMinutes(300).toInstant())
                 .sign(Algorithm.HMAC256(JWTSecret));
     }
 

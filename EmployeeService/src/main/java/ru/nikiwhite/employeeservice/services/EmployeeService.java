@@ -1,80 +1,24 @@
 package ru.nikiwhite.employeeservice.services;
 
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import ru.nikiwhite.employeeservice.dto.EmployeeDTO;
+import ru.nikiwhite.employeeservice.dto.UpdateEmployeeDTO;
 import ru.nikiwhite.employeeservice.models.Employee;
-import ru.nikiwhite.employeeservice.repositories.EmployeeRepository;
-import ru.nikiwhite.employeeservice.utils.EmployeeNotCreatedException;
-import ru.nikiwhite.employeeservice.utils.EmployeeNotFoundException;
 
 import java.util.List;
+import java.util.Map;
 
+public interface EmployeeService {
 
-@Service
-@Transactional(readOnly = true)
-public class EmployeeService {
+    public void addNewEmployee(EmployeeDTO employeeDTO);
 
-    private final EmployeeRepository employeeRepository;
-    private final RabbitTemplate rabbitTemplate;
-    private final PasswordEncoder passwordEncoder;
+    public void updateEmployee(long id, UpdateEmployeeDTO updateEmployeeDTO);
 
-    public EmployeeService(EmployeeRepository employeeRepository,
-                           RabbitTemplate rabbitTemplate,
-                           PasswordEncoder passwordEncoder) {
-        this.employeeRepository = employeeRepository;
-        this.rabbitTemplate = rabbitTemplate;
-        this.passwordEncoder = passwordEncoder;
-    }
+    public double getAvgDepartmentSalaryByFullName(String name, String surname, String middleName);
 
-    @Transactional
-    public void addNewEmployee(Employee employee) {
-        if (employeeRepository.findByEmail(employee.getEmail()).isPresent()) {
-            throw new EmployeeNotCreatedException(
-                    "Пользователь c таким email уже зарегистрирован", HttpStatus.BAD_REQUEST
-            );
-        } else {
-            employee.setPassword(passwordEncoder.encode(employee.getPassword()));
-            employee.setHeadId(employee.getDepartment().getHeadId());
+    public Page<Employee> showAllEmployees(Pageable pageable);
 
-            employeeRepository.save(employee);
-
-            rabbitTemplate.convertAndSend("exchange", "employee", employee);
-        }
-    }
-
-    @Transactional
-    public void updateEmployee(long id, Employee employee) {
-
-        Employee updatedEmployee = employeeRepository.findById(id).orElseThrow(EmployeeNotFoundException::new);
-
-        updatedEmployee.setName(employee.getName());
-        updatedEmployee.setSurname(employee.getSurname());
-        updatedEmployee.setMiddleName(employee.getMiddleName());
-        updatedEmployee.setEmail(employee.getEmail());
-
-        employeeRepository.save(updatedEmployee);
-
-        rabbitTemplate.convertAndSend("exchange", "user", "Данные успешно обновлены");
-    }
-
-    public double getAvgDepartmentSalaryByFullName(String name, String surname, String middleName) {
-
-        Employee findEmployee = employeeRepository.findByNameAndSurnameAndMiddleName(name, surname, middleName)
-                .orElseThrow(EmployeeNotFoundException::new);
-
-        List<Employee> employees = employeeRepository.findByDepartment(findEmployee.getDepartment());
-
-        double allSalaryFromDepartment = 0;
-
-        for (Employee employee : employees) {
-            allSalaryFromDepartment = allSalaryFromDepartment + employee.getSalary();
-        }
-
-        rabbitTemplate.convertAndSend("exchange", "head", findEmployee);
-
-        return allSalaryFromDepartment / employees.size();
-    }
+    public Map<Integer, List<String>> showAllEmployeesGroupingByDepartmentToSortedNames();
 }
