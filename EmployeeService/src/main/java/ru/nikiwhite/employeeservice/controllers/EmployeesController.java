@@ -92,7 +92,7 @@ public class EmployeesController {
         return employeeService.showAllEmployees(pageable);
     }
 
-    @GetMapping("/test")
+    @GetMapping("/api/v1/findAllGrouping")
     public Map<Integer, List<String>> showAllEmployeesGroupingByDepartmentToSortedNames() {
         return employeeService.showAllEmployeesGroupingByDepartmentToSortedNames();
     }
